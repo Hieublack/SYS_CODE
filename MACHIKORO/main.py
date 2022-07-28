@@ -549,7 +549,7 @@ def normal_main(list_player, times, print_mode):
     # count_game = np.zeros(10)
     all_id_player = np.arange(len(list_player))
     for van in range(times):
-        print('ván ', van, '--------------------------------------------------------------------------------------------------------')
+        # print('ván ', van, '--------------------------------------------------------------------------------------------------------')
         shuffle = np.random.choice(all_id_player, 4, replace=False)
         # for id in shuffle:
         #     count_game[id] += 1
