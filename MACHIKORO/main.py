@@ -24,7 +24,7 @@ def state_to_player(env_state):
         id = int((player_action + idx)%4)
         all_other_player_in4 = env_state[20*id:20*(id+1)]
         player_state = np.append(player_state, all_other_player_in4)
-    player_state = np.concatenate((player_state, env_state[80:95], env_state[-3:]))
+    player_state = np.concatenate((player_state, env_state[80:95], env_state[-4:]))
     return player_state
 
 @njit(fastmath=True, cache=True)
