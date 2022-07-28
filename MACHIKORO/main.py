@@ -33,9 +33,9 @@ def amount_action_space():
 
 def player_random(player_state, file_temp, file_per):
     list_action = get_list_action(player_state)
-    if len(list_action) == 0:
-        print(list_action, player_state)
-        raise Exception('toang đây Hiếu ơi')
+    # if len(list_action) == 0:
+    #     print(list_action, player_state)
+    #     raise Exception('toang đây Hiếu ơi')
     action = int(np.random.choice(list_action))
     if check_victory(player_state) == -1:
         # print('chưa hết game')
@@ -83,7 +83,7 @@ def check_winner(env_state):
     
 @njit(fastmath=True, cache=True)
 def get_list_action(player_state):
-    player_action = int(player_state[-2])
+    # player_action = int(player_state[-2])
     phase_env = player_state[-1]
     player_state_own = player_state[:20]
     '''
@@ -188,7 +188,6 @@ def get_list_action(player_state):
             if player_state_own[-4] == 0:
                 list_action = np.append(list_action, 49)
         return list_action
-
 
 @njit(fastmath=True, cache=True)
 def step(env_state, action, all_card_fee):
@@ -528,7 +527,6 @@ def system_check_end(env_state):
     return False
 
 def one_game(list_player, file_temp, file_per, all_card_fee):
-    all_state = []
     env_state = reset()
     while not system_check_end(env_state):
         # player_state = state_to_player(env_state)
