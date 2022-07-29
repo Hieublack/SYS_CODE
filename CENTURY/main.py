@@ -98,7 +98,7 @@ def get_list_action(player_state):
     # print('CHECK_PHASE', phase_env, player_token, player_state[0])
     if phase_env == 1:
         #chọn mua thẻ (6 thẻ top và 5 thẻ point) hay đánh thẻ (thẻ trên tay) hay nghỉ ngơi (11 action mua, 45 action đánh, 1 action nghỉ)
-        list_action = np.array([0.0]) #mặc định 1 action nghỉ ngơi
+        list_action = np.array([0]) #mặc định 1 action nghỉ ngơi
         #check mua 6 thẻ top
         number_token = np.sum(player_token)
         card_on_board = player_state[255:303]
@@ -125,26 +125,25 @@ def get_list_action(player_state):
 
     elif phase_env == 2:
         #nếu mua thẻ top và cần bỏ token, chọn token để vào các thẻ trước thẻ mình mua (4 action)
-        list_action = np.where(player_token > 0)[0]+57.0
+        list_action = np.where(player_token > 0)[0]+57
         return list_action
 
     elif phase_env == 3:
         #nếu đánh thẻ, chọn xem có thực hiện action của thẻ tiếp ko (2action, 1 cái là ko, 1 cái trùng vs action dùng thẻ)
-        last_action = player_state[-3]
-        list_action = np.array([61.0, last_action])
+        last_action = int(player_state[-3])
+        list_action = np.array([61, last_action])
         # print(list_action)
         return list_action
     
     elif phase_env == 4:
         #trả token dư thừa (4 action) sau khi đánh thẻ hoặc mua thẻ top
-        list_action = np.where(player_token > 1)[0]+57.0
-        # print(list_action)
+        list_action = np.where(player_token > 1)[0]+57
         return list_action
 
     elif phase_env == 5:
-        list_action = np.where(player_token > 0)[0]+62.0
+        list_action = np.where(player_token > 0)[0]+62
         if len(list_action) == 0:
-            list_action = np.array([65.0])
+            list_action = np.array([65])
         # print(list_action)
         return list_action
     
