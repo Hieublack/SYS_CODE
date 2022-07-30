@@ -159,27 +159,32 @@ def check_victory(player_state):
     if end == 0:
         return value_return
     else:
-        id_winner = 0
+        id_winner = -0.5
         max_point = 0
         sum_token_max = 0
         for id_player in range(5):
             player_in4 = player_state[51*id_player:51*(id_player+1)]
             player_point = player_in4[0] + np.sum(player_in4[3:6])
-            if player_point > max_point:
+
+            if int(player_point) > int(max_point):
                 max_point = player_point
                 id_winner = id_player
                 sum_token_max = np.sum(np.multiply(player_in4[2:6], np.array([0, 1, 2, 3])))
-            elif player_point == max_point:
+
+            elif int(player_point) == int(max_point):
                 sum_token = np.sum(np.multiply(player_in4[2:6], np.array([0, 1, 2, 3])))
                 if sum_token > sum_token_max:
                     max_point = player_point
                     id_winner = id_player
                     sum_token_max = sum_token
+                elif sum_token == sum_token_max and player_point > max_point:
+                    max_point = player_point
+                    id_winner = id_player
+                    sum_token_max = np.sum(np.multiply(player_in4[2:6], np.array([0, 1, 2, 3])))
                 else:
                     pass
             else:
                 pass
-
         if id_winner == 0:
             return 1
         else:
@@ -193,13 +198,17 @@ def check_winner(env_state):
     for id_player in range(5):
         player_in4 = env_state[51*id_player:51*(id_player+1)]
         player_point = player_in4[0] + np.sum(player_in4[3:6])
-        if player_point > max_point:
+        if int(player_point) > int(max_point):
             max_point = player_point
             winner = id_player
             sum_token_max = np.sum(np.multiply(player_in4[2:6], np.array([0, 1, 2, 3])))
-        elif player_point == max_point:
+        elif int(player_point) == int(max_point):
             sum_token = np.sum(np.multiply(player_in4[2:6], np.array([0, 1, 2, 3])))
             if sum_token > sum_token_max:
+                max_point = player_point
+                winner = id_player
+                sum_token_max = sum_token
+            elif sum_token == sum_token_max and player_point > max_point:
                 max_point = player_point
                 winner = id_player
                 sum_token_max = sum_token
