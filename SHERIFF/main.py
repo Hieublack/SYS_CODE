@@ -59,11 +59,11 @@ def state_to_player(env_state):
 def player_random(player_state, file_temp, file_per):
     list_action = get_list_action(player_state)
     action = int(np.random.choice(list_action))
-    if check_win(player_state) == -1:
+    if check_victory(player_state) == -1:
         # print('chưa hết game')
         pass
     else:
-        if check_win(player_state) == 1:
+        if check_victory(player_state) == 1:
             # print('win')
             pass
         else:
@@ -442,10 +442,11 @@ def action_player(env_state,list_player,file_temp,file_per):
 def check_winner(env_state):
     all_reward = np.array([2, 3 ,3 ,4 ,6 ,7 ,8 ,9 ,4 ,6 ,6 ,8 ,6 ,9 ,9])
     all_number_count = np.array([1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3])
-    # id_action_1 = 0
+    id_action_1 = 0
     all_number_type_card = np.zeros(16)
     all_done_card = np.zeros(60)
     all_player_coin = np.array([env_state[96*i] for i in range(4)])
+    all_player_coin = all_player_coin + np.array([0, 0.1, 0.2, 0.3])
     for id_player in range(4):
         player_i = env_state[96*id_player:96*(id_player+1)]
         player_i_done = player_i[-75:-60]
@@ -485,8 +486,10 @@ def check_winner(env_state):
                 all_player_coin = np.where(count_type == top2, all_player_coin + reward_i, all_player_coin)
     for id_player in range(4):
         env_state[96*id_player] = all_player_coin[id_player]
-    temp_win = np.max(all_player_coin)
-    number_win = np.where(all_player_coin == temp_win)
+
+    all_player_coin_int = np.array([int(all_player_coin[i]) for i in range(len(all_player_coin))])
+    temp_win = np.max(all_player_coin_int)
+    number_win = np.where(all_player_coin_int == temp_win)
     if len(number_win[0]) == 1:
         return number_win[0][0]
     else:
@@ -506,15 +509,17 @@ def check_winner(env_state):
             if len(number_win[0]) == 1:
                 return number_win[0][0]
             else:
-                return number_win[0][0]
+                all_player_coin_last = np.zeros(4)
+                all_player_coin_last[number_win] = all_player_coin[number_win]
+                return np.argmax(all_player_coin_last)
     
 @njit(fastmath=True, cache=True)
-def check_win(player_state):
+def check_victory(player_state):
     round = player_state[-2]
     if round < 9:
         return -1
     else:
-        all_player_coin = np.array([player_state[0]] + [player_state[96+25*id] for id in range(3)])
+        all_player_coin = np.array([int(player_state[0])] + [int(player_state[96+25*id]) for id in range(3)])
         temp_win = np.max(all_player_coin)
         number_win = np.where(all_player_coin == temp_win)
         if len(number_win[0]) == 1:
@@ -541,11 +546,15 @@ def check_win(player_state):
                     else:
                         return 0
                 else:
-                    if number_win[0][0] == 0:
+                    all_player_coin = np.array([player_state[0]] + [player_state[96+25*id] for id in range(3)])
+                    all_player_coin_last = np.zeros(4) 
+                    all_player_coin_last[number_win] = all_player_coin[number_win]
+                    winner = np.argmax(all_player_coin_last)
+                    if winner == 0:
                         return 1
                     else:
                         return 0
-   
+               
 def one_game(list_player, file_temp, file_per, all_penalty):
     env_state = reset()
     while not system_check_end(env_state):
