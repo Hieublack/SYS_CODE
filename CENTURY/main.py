@@ -220,8 +220,8 @@ def check_winner(env_state):
 def system_check_end(env_state):
     for id_player in range(5):
         if env_state[51*id_player: 51*(id_player+1)][1] == 5:
-            return True
-    return False
+            return False
+    return True
 
 '''
     Quy ước phase: 
@@ -474,9 +474,11 @@ def step(env_state, action, card_in4, card_point_in4):
 
 def one_game(list_player, file_temp, file_per, card_in4, card_point_in4):
     env_state = reset(card_in4, card_point_in4)
-    while not system_check_end(env_state):
+    count_turn = 0
+    while system_check_end(env_state) and count_turn < 5000:
         action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)        
         env_state = step(env_state, action, card_in4, card_point_in4)
+        count_turn += 1
 
     winner = check_winner(env_state)
     for id_player in range(5):

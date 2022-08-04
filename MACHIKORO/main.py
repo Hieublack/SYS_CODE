@@ -523,15 +523,17 @@ def step(env_state, action, all_card_fee):
 def system_check_end(env_state):
     for id_player in range(4):
         if np.sum(env_state[20*id_player: 20*(id_player+1)][-4:]) == 4:
-            return True
-    return False
+            return False
+    return True
 
 def one_game(list_player, file_temp, file_per, all_card_fee):
     env_state = reset()
-    while not system_check_end(env_state):
+    count_turn = 0
+    while system_check_end(env_state) and count_turn < 500:
         # player_state = state_to_player(env_state)
         action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)
         env_state = step(env_state, action, all_card_fee)
+        count_turn += 1
         # all_state.append(env_state)
 
     winner = check_winner(env_state)
