@@ -127,7 +127,10 @@ def get_list_action(player_state):
 
     elif phase_env == 7:
         #45 là ko hối lộ nữa, 46 là thêm coin
-        list_action = np.array([45, 46])
+        if player_state_own[0] > 0:
+            list_action = np.array([45, 46])
+        else:
+            list_action = np.array([45])
         return list_action
 
     elif phase_env == 8:
