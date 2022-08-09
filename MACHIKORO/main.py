@@ -266,7 +266,6 @@ def step(env_state, action, all_card_fee):
                         env_state[20*id_next] -= delta_coin
                         player_in4[0] += delta_coin
                     env_state[20*id_action:20*(id_action+1)] = player_in4
-                    return env_state
                 
                 if player_in4[14] > 0:      #nếu có thẻ đài truyền hình
                     env_state[20*id_action:20*(id_action+1)] = player_in4
@@ -285,8 +284,7 @@ def step(env_state, action, all_card_fee):
                 env_state[20*id_action] += env_state[20*id_action + 8]*(env_state[20*id_action+6] + env_state[20*id_action+9])*3
 
             elif dice == 9:
-                for id in range(4):
-                    env_state[20*id] += env_state[20*id+9]*5
+                
                 next = 1
                 while 0 < player_in4[0] and next <= 3:
                     id_next = (id_action - next) % 4
@@ -297,6 +295,8 @@ def step(env_state, action, all_card_fee):
                     player_in4[0] -= delta_coin
                     env_state[20*id_next] = player_id[0]
                     next += 1
+                for id in range(4):
+                    env_state[20*id] += env_state[20*id+9]*5
                 env_state[20 * id_action] = player_in4[0]   #cập nhật tiền của người chơi
 
             elif dice == 10:
@@ -393,7 +393,6 @@ def step(env_state, action, all_card_fee):
                     env_state[20*id_next] -= delta_coin
                     player_in4[0] += delta_coin
                 env_state[20*id_action:20*(id_action+1)] = player_in4
-                return env_state
             
             if player_in4[14] > 0:      #nếu có thẻ đài truyền hình
                 env_state[20*id_action:20*(id_action+1)] = player_in4
@@ -419,9 +418,7 @@ def step(env_state, action, all_card_fee):
             env_state[20*id_action] += env_state[20*id_action + 8]*(env_state[20*id_action+6] + env_state[20*id_action+9])*3
 
         elif dice == 9:
-            for id in range(4):
-                env_state[20*id] += env_state[20*id+9]*5
-            next = 1
+            
             while 0 < player_in4[0] and next <= 3:
                 id_next = (id_action - next) % 4
                 player_id = env_state[20 * id_next : 20 * (id_next + 1)]
@@ -431,6 +428,9 @@ def step(env_state, action, all_card_fee):
                 player_in4[0] -= delta_coin
                 env_state[20*id_next] = player_id[0]
                 next += 1
+            for id in range(4):
+                env_state[20*id] += env_state[20*id+9]*5
+            next = 1
             env_state[20 * id_action] = player_in4[0]   #cập nhật tiền của người chơi
 
         elif dice == 10:
