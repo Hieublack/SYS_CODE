@@ -235,7 +235,7 @@ def step(env_state, action, all_card_fee):
             elif dice == 3:
                 next = 1
                 while 0 < player_in4[0] and next <= 3:
-                    id_next = (id_action + next) % 4
+                    id_next = (id_action - next) % 4
                     player_id = env_state[20 * id_next : 20 * (id_next + 1)]
                     coin_get = player_id[4] * (1 + int(player_id[-2] > 0))
                     delta_coin = min(coin_get, player_in4[0])
@@ -279,17 +279,17 @@ def step(env_state, action, all_card_fee):
                         return env_state
 
             elif dice == 7:
-                env_state[20*id_action] += env_state[20*id_action+2]*3
+                env_state[20*id_action] += env_state[20*id_action + 7]*env_state[20*id_action+2]*3
 
             elif dice == 8:
-                env_state[20*id_action] += (env_state[20*id_action+6] + env_state[20*id_action+9])*3
+                env_state[20*id_action] += env_state[20*id_action + 8]*(env_state[20*id_action+6] + env_state[20*id_action+9])*3
 
             elif dice == 9:
                 for id in range(4):
                     env_state[20*id] += env_state[20*id+9]*5
                 next = 1
                 while 0 < player_in4[0] and next <= 3:
-                    id_next = (id_action + next) % 4
+                    id_next = (id_action - next) % 4
                     player_id = env_state[20 * id_next : 20 * (id_next + 1)]
                     coin_get = player_id[10] * (2 + int(player_id[-2] > 0))
                     delta_coin = min(coin_get, player_in4[0])
@@ -315,7 +315,7 @@ def step(env_state, action, all_card_fee):
                 env_state[20 * id_action] = player_in4[0]   #cập nhật tiền của người chơi
 
             elif dice == 11 or dice == 12:
-                env_state[20*id_action] += (env_state[20*id_action+1] + env_state[20*id_action+11])*3
+                env_state[20*id_action] += env_state[20*id_action + 12]*(env_state[20*id_action+1] + env_state[20*id_action+11])*3
             #sau khi cập nhật xu, cho roll tiếp nếu đạt yêu cầu, giảm biến đánh dấu xuống
             if env_state[-5] == 1:
                 env_state[-1] = 1
@@ -362,7 +362,7 @@ def step(env_state, action, all_card_fee):
         elif dice == 3:
             next = 1
             while 0 < player_in4[0] and next <= 3:
-                id_next = (id_action + next) % 4
+                id_next = (id_action - next) % 4
                 player_id = env_state[20 * id_next : 20 * (id_next + 1)]
                 coin_get = player_id[4] * (1 + int(player_id[-2] > 0))
                 delta_coin = min(coin_get, player_in4[0])
@@ -413,17 +413,17 @@ def step(env_state, action, all_card_fee):
                 return env_state
 
         elif dice == 7:
-            env_state[20*id_action] += env_state[20*id_action+2]*3
+            env_state[20*id_action] += env_state[20*id_action + 7]*env_state[20*id_action+2]*3
 
         elif dice == 8:
-            env_state[20*id_action] += (env_state[20*id_action+6] + env_state[20*id_action+9])*3
+            env_state[20*id_action] += env_state[20*id_action + 8]*(env_state[20*id_action+6] + env_state[20*id_action+9])*3
 
         elif dice == 9:
             for id in range(4):
                 env_state[20*id] += env_state[20*id+9]*5
             next = 1
             while 0 < player_in4[0] and next <= 3:
-                id_next = (id_action + next) % 4
+                id_next = (id_action - next) % 4
                 player_id = env_state[20 * id_next : 20 * (id_next + 1)]
                 coin_get = player_id[10] * (2 + int(player_id[-2] > 0))
                 delta_coin = min(coin_get, player_in4[0])
@@ -449,7 +449,7 @@ def step(env_state, action, all_card_fee):
             env_state[20 * id_action] = player_in4[0]   #cập nhật tiền của người chơi
 
         elif dice == 11 or dice == 12:
-            env_state[20*id_action] += (env_state[20*id_action+1] + env_state[20*id_action+11])*3
+            env_state[20*id_action] += env_state[20*id_action + 12]*(env_state[20*id_action+1] + env_state[20*id_action+11])*3
             env_state[-1] = 4  
         #sau khi cập nhật xu, cho roll tiếp nếu đạt yêu cầu, giảm biến đánh dấu xuống
         if env_state[-5] == 1:
