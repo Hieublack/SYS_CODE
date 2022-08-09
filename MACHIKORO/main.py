@@ -9,9 +9,10 @@ import time
 
 @njit(fastmath=True, cache=True)
 def reset():
-    normal_card = np.concatenate((np.full(12, 6), np.full(3, 4)))
+    normal_card = np.full(12, 6)
     start_player = np.concatenate((np.array([0, 1, 0, 1]), np.zeros(16)))
-    environment = np.concatenate((start_player, start_player, start_player, start_player, normal_card, np.array([-0.5, 0, 0, 0, 0, 1])))
+    card_buy_in_turn = np.zeros(12)
+    environment = np.concatenate((start_player, start_player, start_player, start_player, normal_card, card_buy_in_turn, np.array([-0.5, 0, 0, 0, 0, 1])))
     #[card_sell, được đi tiếp hay ko, last_dice, pick_person, id_action, phase]
 
     return environment
@@ -24,7 +25,7 @@ def state_to_player(env_state):
         id = int((player_action + idx)%4)
         all_other_player_in4 = env_state[20*id:20*(id+1)]
         player_state = np.append(player_state, all_other_player_in4)
-    player_state = np.concatenate((player_state, env_state[80:95], env_state[-4:]))
+    player_state = np.concatenate((player_state, env_state[80:104], env_state[-4:]))
     return player_state
 
 @njit(fastmath=True, cache=True)
@@ -98,8 +99,11 @@ def get_list_action(player_state):
     '''
     
     if phase_env == 1:
+        if player_state_own[-1] != 0:
         #chọn số xúc sắc để đổ: 1 ứng với 1 xúc sắc, 2 ứng với 2 xúc sắc
-        return np.array([1, 2]) 
+            return np.array([1, 2]) 
+        else:
+            return np.array([1])  
 
     elif phase_env == 2:
         #chọn đổ lại hay k, 0 là ko, 1 là đổ 1, 2 là đổ 2 
@@ -128,41 +132,42 @@ def get_list_action(player_state):
         list_action = np.array([53])
         p_coin = player_state[0]
         card_board = player_state[80:92]
+        card_bought = player_state[92:104]
         if p_coin > 0:
-            if card_board[0] > 0:
+            if card_board[0] > 0 and card_bought[0] == 0:
                 list_action = np.append(list_action, 34)
         if p_coin > 0:
-            if card_board[1] > 0:
+            if card_board[1] > 0 and card_bought[1] == 0:
                 list_action = np.append(list_action, 35)
         if p_coin > 0 :
-            if card_board[2] > 0:
+            if card_board[2] > 0 and card_bought[2] == 0:
                 list_action = np.append(list_action, 36)
         if p_coin > 2 :
-            if card_board[3] > 0:
+            if card_board[3] > 0 and card_bought[3] == 0:
                 list_action = np.append(list_action, 37)
         if p_coin > 2 :
-            if card_board[4] > 0:
+            if card_board[4] > 0 and card_bought[4] == 0:
                 list_action = np.append(list_action, 38)
         if p_coin > 3 :
-            if card_board[5] > 0:
+            if card_board[5] > 0 and card_bought[5] == 0:
                 list_action = np.append(list_action, 39)
         if p_coin > 5 :
-            if card_board[6] > 0:
+            if card_board[6] > 0 and card_bought[6] == 0:
                 list_action = np.append(list_action, 40)
         if p_coin > 3 :
-            if card_board[7] > 0:
+            if card_board[7] > 0 and card_bought[7] == 0:
                 list_action = np.append(list_action, 41)
         if p_coin > 6 :
-            if card_board[8] > 0:
+            if card_board[8] > 0 and card_bought[8] == 0:
                 list_action = np.append(list_action, 42)
         if p_coin > 3 :
-            if card_board[9] > 0:
+            if card_board[9] > 0 and card_bought[9] == 0:
                 list_action = np.append(list_action, 43)
         if p_coin > 3 :
-            if card_board[10] > 0:
+            if card_board[10] > 0 and card_bought[10] == 0:
                 list_action = np.append(list_action, 44)
         if p_coin > 2 :
-            if card_board[11] > 0:
+            if card_board[11] > 0 and card_bought[11] == 0:
                 list_action = np.append(list_action, 45)
 
         if p_coin > 6 :
@@ -504,13 +509,14 @@ def step(env_state, action, all_card_fee):
     elif phase_env == 7:
         if action == 53:
             env_state[-1] = 1
+            env_state[92:104] = np.zeros(12)
             env_state[-2] = (env_state[-2] + 1)%4
         else:
             card_buy = action - 33
             player_in4[card_buy] += 1
             player_in4[0] -= all_card_fee[card_buy-1]
             env_state[20*id_action:20*(id_action+1)] = player_in4
-            if card_buy < 16:
+            if card_buy < 13:
                 #nếu mua thẻ trên bàn thì trừ ở bàn chơi đi
                 env_state[80+card_buy-1] -= 1
             if player_in4[0] == 0:
@@ -583,9 +589,10 @@ def random_policy(state,file_temp,file_per):
 # list_player = [random_policy]*3 + [player_random]
 
 # count_all, file_per_all = normal_main(list_player, 1, 1)
+# list_player = [player_random]*4
 
-
-
+# count_all, file_per_all = normal_main(list_player, 1, 1)
+# count_all, file_per_all
 
 
 
