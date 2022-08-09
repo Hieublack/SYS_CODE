@@ -210,7 +210,7 @@ def step(env_state, action, all_card_fee):
             dice1 = np.random.randint(1,7)
             dice2 = np.random.randint(1,7)
             dice =  dice1 + dice2
-
+        env_state[-4] = dice
         if player_in4[-3] != 0 and dice1 == dice2 and dice1 != 0:
             #đánh dấu là được đổ tiếp
             env_state[-5] = 1
@@ -266,15 +266,17 @@ def step(env_state, action, all_card_fee):
                         env_state[20*id_next] -= delta_coin
                         player_in4[0] += delta_coin
                     env_state[20*id_action:20*(id_action+1)] = player_in4
+                    return env_state
                 
                 if player_in4[14] > 0:      #nếu có thẻ đài truyền hình
                     env_state[20*id_action:20*(id_action+1)] = player_in4
                     env_state[-1] = 3           #trạng thái chọn người để lấy tiền
+                    return env_state
                 else:
                     if player_in4[15] > 0:  #nếu có thẻ trung tâm thương mại
                         env_state[20*id_action:20*(id_action+1)] = player_in4
                         env_state[-1] = 4       #trạng thái chọn người để đổi thẻ
-                return env_state
+                        return env_state
 
             elif dice == 7:
                 env_state[20*id_action] += env_state[20*id_action+2]*3
@@ -322,6 +324,7 @@ def step(env_state, action, all_card_fee):
                 if env_state[-1] == 1:
                     env_state[-1] = 7
                 
+                
     elif phase_env == 2:
         dice = 0
         dice1 = 0
@@ -337,7 +340,8 @@ def step(env_state, action, all_card_fee):
             dice1 = np.random.randint(1,7)
             dice2 = np.random.randint(1,7)
             dice =  dice1 + dice2
-            
+        
+        env_state[-4] = dice
         if player_in4[-3] != 0 and dice1 == dice2 and dice1 != 0:
             #đánh dấu là được đổ tiếp
             env_state[-5] = 1
@@ -389,10 +393,12 @@ def step(env_state, action, all_card_fee):
                     env_state[20*id_next] -= delta_coin
                     player_in4[0] += delta_coin
                 env_state[20*id_action:20*(id_action+1)] = player_in4
+                return env_state
             
             if player_in4[14] > 0:      #nếu có thẻ đài truyền hình
                 env_state[20*id_action:20*(id_action+1)] = player_in4
                 env_state[-1] = 3           #trạng thái chọn người để lấy tiền
+                return env_state
             else:
                 if player_in4[15] > 0:  #nếu có thẻ trung tâm thương mại
                     env_state[20*id_action:20*(id_action+1)] = player_in4
@@ -404,8 +410,7 @@ def step(env_state, action, all_card_fee):
                     else:
                         if env_state[-1] == 2:
                             env_state[-1] = 7
-
-            return env_state
+                return env_state
 
         elif dice == 7:
             env_state[20*id_action] += env_state[20*id_action+2]*3
@@ -518,9 +523,11 @@ def step(env_state, action, all_card_fee):
             env_state[20*id_action:20*(id_action+1)] = player_in4
             if card_buy < 13:
                 #nếu mua thẻ trên bàn thì trừ ở bàn chơi đi
+                env_state[92:104][card_buy-1] += 1
                 env_state[80+card_buy-1] -= 1
             if player_in4[0] == 0:
                 env_state[-1] = 1
+                env_state[92:104] = np.zeros(12)
                 env_state[-2] = (env_state[-2] + 1)%4
 
     return env_state 
