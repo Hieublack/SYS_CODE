@@ -310,7 +310,7 @@ def step(env_state, action, card_in4, card_point_in4):
                             free_score = 1
                             env_state[-4] -= 1
                 else:
-                    if list_coin[1] != 0:
+                    if list_coin[1] != 0 and list_coin[0] != 0:
                         free_score = 1
                         env_state[-4] -= 1
             #Cập nhật giá trị
