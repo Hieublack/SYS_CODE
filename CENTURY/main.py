@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import re
 import numba
-from numba import vectorize, jit, cuda, float64, njit, prange
+from numba import njit
 import os
 import time
 
@@ -26,17 +26,19 @@ def all_card_point_in4():
 # khởi tạo bàn chơi
 @njit(fastmath=True, cache=True)
 def reset(card_in4, card_point_in4):
-    start_card_player = np.concatenate((np.array([1]), np.zeros(43), np.array([1])))
+    start_card_player = np.concatenate((np.array([1]), np.zeros(42), np.array([1, 0])))
     start_player_0 = np.concatenate((np.array([0, 0, 3, 0, 0, 0]), start_card_player))
-    start_player_12 = np.concatenate((np.array([0, 0, 4, 0, 0, 0]), start_card_player))
-    start_player_34 = np.concatenate((np.array([0, 0, 3, 1, 0, 0]), start_card_player))
-    list_card = np.arange(1,44)
+    start_player_1 = np.concatenate((np.array([0.1, 0, 4, 0, 0, 0]), start_card_player))
+    start_player_2 = np.concatenate((np.array([0.2, 0, 4, 0, 0, 0]), start_card_player))
+    start_player_3 = np.concatenate((np.array([0.3, 0, 3, 1, 0, 0]), start_card_player))
+    start_player_4 = np.concatenate((np.array([0.4, 0, 3, 1, 0, 0]), start_card_player))
+    list_card = np.append(np.arange(1,43), 44)
     list_card_point = np.arange(36)
     np.random.shuffle(list_card)
     np.random.shuffle(list_card_point)
     top_6_card = card_in4[list_card[:6]].flatten()
     top_5_card_point = card_point_in4[list_card_point[:5]].flatten()
-    env_state = np.concatenate((start_player_0, start_player_12, start_player_12, start_player_34, start_player_34, top_6_card, np.zeros(20), top_5_card_point, list_card, list_card_point, np.array([0, -0.5, 0, 10, 10, 0, 1, 0])))
+    env_state = np.concatenate((start_player_0, start_player_1, start_player_2, start_player_3, start_player_4, top_6_card, np.zeros(20), top_5_card_point, list_card, list_card_point, np.array([0, -0.5, 0, 10, 10, 0, 1, 0])))
     #5 player_in4, 6card_in4,5 token free, 5 card_point_in4, list_card_shuffle, list_card_point_shuffle, [number_action, card_will_buy/card_hand_used, token need drop, silver, gold, last_action, phase, id_action]
     return env_state
 
@@ -57,20 +59,22 @@ def amount_action_space():
     return 66
 
 def player_random(player_state, file_temp, file_per):
+
     list_action = get_list_action(player_state)
-    # if len(list_action) == 0:
-    #     print(list_action, player_state)
-    #     raise Exception('toang đây Hiếu ơi')
     action = int(np.random.choice(list_action))
+
     if check_victory(player_state) == -1:
         # print('chưa hết game')
         pass
     else:
         if check_victory(player_state) == 1:
             # print('win')
+            file_per[0] += 1
+            file_per[2] += 1
             pass
         else:
             # print('lose')
+            file_per[1] += 1
             pass
     return action, file_temp, file_per
 
@@ -78,12 +82,10 @@ def action_player(env_state,list_player,file_temp,file_per):
     current_player = int(env_state[-1])
     player_state = state_to_player(env_state)
     played_move,file_temp[current_player],file_per = list_player[current_player](player_state,file_temp[current_player],file_per)
-    # print(current_player, played_move, env_state[-6:])
     return played_move,file_temp,file_per
 
 @njit(fastmath=True, cache=True)
 def get_list_action(player_state):
-    # print(player_state)
     phase_env = int(player_state[-1])
     player_state_own = player_state[:51]
     '''
@@ -95,7 +97,6 @@ def get_list_action(player_state):
         phase5: chọn tài nguyên nâng cấp    
     '''
     player_token = player_state_own[2:6]
-    # print('CHECK_PHASE', phase_env, player_token, player_state[0])
     if phase_env == 1:
         #chọn mua thẻ (6 thẻ top và 5 thẻ point) hay đánh thẻ (thẻ trên tay) hay nghỉ ngơi (11 action mua, 45 action đánh, 1 action nghỉ)
         list_action = np.array([0]) #mặc định 1 action nghỉ ngơi
@@ -120,7 +121,6 @@ def get_list_action(player_state):
                 give = data[card_hand-6][:4]
                 if np.sum(give > player_token) == 0:
                     list_action = np.append(list_action, card_hand+6) 
-        # print(list_action)
         return list_action
 
     elif phase_env == 2:
@@ -132,7 +132,6 @@ def get_list_action(player_state):
         #nếu đánh thẻ, chọn xem có thực hiện action của thẻ tiếp ko (2action, 1 cái là ko, 1 cái trùng vs action dùng thẻ)
         last_action = int(player_state[-3])
         list_action = np.array([61, last_action])
-        # print(list_action)
         return list_action
     
     elif phase_env == 4:
@@ -144,7 +143,6 @@ def get_list_action(player_state):
         list_action = np.where(player_token > 0)[0]+62
         if len(list_action) == 0:
             list_action = np.array([65])
-        # print(list_action)
         return list_action
     
 @njit(fastmath=True, cache=True)
@@ -257,6 +255,7 @@ def step(env_state, action, card_in4, card_point_in4):
                 card_buy = int(list_card_board[idx_card_buy])
                 all_token_free = env_state[303:323]
                 token_free = all_token_free[4*idx_card_buy:4*(idx_card_buy + 1)]
+                all_token_free = np.concatenate((all_token_free[4:], np.zeros(4)))          #9/8 cập nhật giảm token free
                 #cập nhật giá trị
                 list_card_player[card_buy] = 1
                 list_card_board[idx_card_buy:] = np.append(list_card_board[idx_card_buy+1:], -1)
@@ -264,13 +263,13 @@ def step(env_state, action, card_in4, card_point_in4):
                 for i in range(6):
                     id = list_card_board[:6][i]
                     top_6_card[i] = card_in4[int(id)]
-                # top_6_card = np.array([card_in4[int(id)] for id in list_card_board[:6]]).flatten()
                 top_6_card = top_6_card.flatten()
                 player_in4[6:] = list_card_player       #cập nhật thẻ mới mua
                 player_in4[2:6] += token_free            #cập nhật token free nếu có
                 env_state[51*id_action:51*(id_action+1)] = player_in4
                 env_state[348:391] = list_card_board    #cập nhật danh sách thẻ trên bàn
                 env_state[255:303] = top_6_card         #cập nhật 6 thẻ người chơi có thể mua
+                env_state[303:323] = all_token_free         #9/8 cập nhật giảm token free
                 #kiểm tra có phải trả tài nguyên ko
                 if np.sum(player_in4[2:6]) > 10:
                     env_state[-6] = np.sum(player_in4[2:6]) - 10
@@ -342,7 +341,7 @@ def step(env_state, action, card_in4, card_point_in4):
             if np.sum(token_fee_get) == 0:  #nếu là thẻ nâng cấp
                 player_in4[6:51] = card_hand_player 
                 env_state[51*id_action:51*(id_action+1)] = player_in4
-                env_state[-8] = id_card_use - 42
+                env_state[-8] = id_card_use - 41
                 env_state[-2] = 5
             else:
                 #Cập nhật giá trị
@@ -381,6 +380,7 @@ def step(env_state, action, card_in4, card_point_in4):
             token_free = np.zeros(4)
             if idx_card_buy != 5:
                 token_free = all_token_free[4*idx_card_buy:4*(idx_card_buy + 1)]
+                all_token_free = np.concatenate((all_token_free[: 4*idx_card_buy], all_token_free[4*(idx_card_buy+1): ], np.zeros(4)))      #9/8 cập nhật giảm token free
             #cập nhật giá trị
             list_card_player[card_buy] = 1
             list_card_board[idx_card_buy:] = np.append(list_card_board[idx_card_buy+1:], -1)
@@ -389,6 +389,7 @@ def step(env_state, action, card_in4, card_point_in4):
             for i in range(6):
                 id = list_card_board[:6][i]
                 top_6_card[i] = card_in4[int(id)]
+                
             # top_6_card = np.array([card_in4[int(id)] for id in list_card_board[:6]]).flatten()
             top_6_card = top_6_card.flatten()
             player_in4[6:] = list_card_player       #cập nhật thẻ mới mua
@@ -397,6 +398,7 @@ def step(env_state, action, card_in4, card_point_in4):
             env_state[303:323] = all_token_free     #cập nhật token free
             env_state[348:391] = list_card_board    #cập nhật danh sách thẻ trên bàn
             env_state[255:303] = top_6_card         #cập nhật 6 thẻ người chơi có thể mua
+            env_state[303:323] = all_token_free         #9/8 cập nhật giảm token free
             #Khôi phục các giá trị lưu trữ
             env_state[-7] = -0.5
             #kiểm tra có phải trả tài nguyên ko
@@ -483,56 +485,25 @@ def one_game(list_player, file_temp, file_per, card_in4, card_point_in4):
     winner = check_winner(env_state)
     for id_player in range(5):
         id_action = env_state[-1]
-        # player_state = state_to_player(env_state)
         action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)
         env_state[-1] = (env_state[-1] + 1)%5
     return winner, file_per
 
 def normal_main(list_player, times, print_mode):
     count = np.zeros(len(list_player))
-    file_per = [0]
+    file_per = [0, 0, 0, 0]
     card_in4 = all_card_in4()
     card_point_in4 = all_card_point_in4()
-    # count_game = np.zeros(10)
     all_id_player = np.arange(len(list_player))
+
     for van in range(times):
-        # print('ván ', van, '--------------------------------------------------------------------------------------------------------')
         shuffle = np.random.choice(all_id_player, 5, replace=False)
-        # for id in shuffle:
-        #     count_game[id] += 1
         shuffle_player = [list_player[shuffle[0]], list_player[shuffle[1]], list_player[shuffle[2]], list_player[shuffle[3]], list_player[shuffle[4]]]
         file_temp = [[0],[0],[0],[0], [0]]
         winner, file_per = one_game(shuffle_player, file_temp, file_per, card_in4, card_point_in4)
         count[shuffle[winner]] += 1
-        # print(winner)
     return count, file_per
 
 # list_player = [player_random]*5
-# count_all, file_per_all = normal_main(list_player, 10, 1)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# count_all, file_per_all = normal_main(list_player, 1, 1)
 
