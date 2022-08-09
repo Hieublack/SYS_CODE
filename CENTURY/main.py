@@ -1,8 +1,7 @@
-import pandas as pd
 import numpy as np
 import re
 import numba
-from numba import njit
+from numba import vectorize, jit, cuda, float64, njit, prange
 import os
 import time
 
@@ -56,7 +55,7 @@ def state_to_player(env_state):
 
 @njit(fastmath=True, cache=True)
 def amount_action_space():
-    return 66
+    return 65
 
 def player_random(player_state, file_temp, file_per):
 
@@ -116,11 +115,18 @@ def get_list_action(player_state):
                 list_action = np.append(list_action, id+7)
         #check đánh thẻ trên tay
         data = all_card_in4()
-        for card_hand in range(6, 51):
+        for card_hand in range(6, 49):
             if player_state[card_hand] == 1:
                 give = data[card_hand-6][:4]
                 if np.sum(give > player_token) == 0:
-                    list_action = np.append(list_action, card_hand+6) 
+                    list_action = np.append(list_action, card_hand+6)
+
+        if player_state[49] == 1:
+            if np.sum(player_token[:3] > 0) != 0:
+                list_action = np.append(list_action, 55)
+        if player_state[50] == 1:
+            if np.sum(player_token[:3] > 0) != 0:
+                list_action = np.append(list_action, 56)
         return list_action
 
     elif phase_env == 2:
@@ -141,8 +147,6 @@ def get_list_action(player_state):
 
     elif phase_env == 5:
         list_action = np.where(player_token > 0)[0]+62
-        if len(list_action) == 0:
-            list_action = np.array([65])
         return list_action
     
 @njit(fastmath=True, cache=True)
@@ -314,16 +318,12 @@ def step(env_state, action, card_in4, card_point_in4):
             player_in4[1] += 1
             player_in4[2:6] -= token_fee
             list_card_point_board[idx_card_buy:] = np.append(list_card_point_board[idx_card_buy+1:], -1)
-            # top_5_card_point = card_point_in4[np.array(list_card_point_board[:5], dtype=int)].flatten()
-            # top_5_card_point = np.array([card_point_in4[int(id)] for id in list_card_point_board[:5]]).flatten()
             top_5_card_point = np.zeros((5, 5))
             for i in range(5):
                 id = list_card_point_board[:5][i]
                 top_5_card_point[i] = card_point_in4[int(id)]
-            # top_6_card = np.array([card_in4[int(id)] for id in list_card_board[:6]]).flatten()
+
             top_5_card_point = top_5_card_point.flatten()
-
-
             env_state[51*id_action:51*(id_action+1)] = player_in4
             env_state[391:427] = list_card_point_board
             env_state[323:348] = top_5_card_point
@@ -446,7 +446,6 @@ def step(env_state, action, card_in4, card_point_in4):
 
     elif phase_env == 4:
         #lấy thông tin
-        # stay_drop = env_state[-6]
         token_drop = action - 57 
         #Cập nhật thông tin
         player_in4[2:6][token_drop] -= 1
@@ -457,18 +456,12 @@ def step(env_state, action, card_in4, card_point_in4):
             env_state[-1] = (env_state[-1] + 1)%5
 
     elif phase_env == 5:
-        number_use = env_state[-8]
         id_update = action - 62
-        if id_update == 3:
-            env_state[-8] = 0
-            env_state[-2] = 1
-            env_state[-1] = (env_state[-1] + 1)%5
-        else:
-            player_in4[2:6][id_update] -= 1
-            player_in4[2:6][id_update+1] += 1
-            env_state[51*id_action:51*(id_action+1)] = player_in4
-            env_state[-8] -= 1
-        if env_state[-8] == 0:
+        player_in4[2:6][id_update] -= 1
+        player_in4[2:6][id_update+1] += 1
+        env_state[51*id_action:51*(id_action+1)] = player_in4
+        env_state[-8] -= 1
+        if env_state[-8] == 0 or np.sum(player_in4[2:5] > 0) == 0:
             env_state[-2] = 1
             env_state[-1] = (env_state[-1] + 1)%5
  
@@ -484,7 +477,6 @@ def one_game(list_player, file_temp, file_per, card_in4, card_point_in4):
 
     winner = check_winner(env_state)
     for id_player in range(5):
-        id_action = env_state[-1]
         action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)
         env_state[-1] = (env_state[-1] + 1)%5
     return winner, file_per
@@ -506,4 +498,3 @@ def normal_main(list_player, times, print_mode):
 
 # list_player = [player_random]*5
 # count_all, file_per_all = normal_main(list_player, 1, 1)
-
