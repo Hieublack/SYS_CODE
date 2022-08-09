@@ -146,7 +146,7 @@ def get_list_action(player_state):
         return list_action
 
     elif phase_env == 5:
-        list_action = np.where(player_token > 0)[0]+62
+        list_action = np.where(player_token[:3] > 0)[0]+62
         return list_action
     
 @njit(fastmath=True, cache=True)
