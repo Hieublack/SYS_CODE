@@ -35,6 +35,8 @@ def reset(card_in4, card_point_in4):
     list_card_point = np.arange(36)
     np.random.shuffle(list_card)
     np.random.shuffle(list_card_point)
+    # print(list_card)
+    # print(list_card_point)
     top_6_card = card_in4[list_card[:6]].flatten()
     top_5_card_point = card_point_in4[list_card_point[:5]].flatten()
     env_state = np.concatenate((start_player_0, start_player_1, start_player_2, start_player_3, start_player_4, top_6_card, np.zeros(20), top_5_card_point, list_card, list_card_point, np.array([0, -0.5, 0, 10, 10, 0, 1, 0])))
@@ -54,14 +56,14 @@ def state_to_player(env_state):
     return player_state
 
 @njit(fastmath=True, cache=True)
-def amount_action_space():
+def amount_action():
     return 65
 
 def player_random(player_state, file_temp, file_per):
 
     list_action = get_list_action(player_state)
     action = int(np.random.choice(list_action))
-
+    # print(list_action)
     if check_victory(player_state) == -1:
         # print('chưa hết game')
         pass
@@ -136,7 +138,7 @@ def get_list_action(player_state):
 
     elif phase_env == 3:
         #nếu đánh thẻ, chọn xem có thực hiện action của thẻ tiếp ko (2action, 1 cái là ko, 1 cái trùng vs action dùng thẻ)
-        last_action = int(player_state[-3])
+        last_action = int(player_state[-2])     #CẬP NHẬT 13/8 từ player_state[-3] thành player_state[-2]
         list_action = np.array([61, last_action])
         return list_action
     
@@ -147,6 +149,8 @@ def get_list_action(player_state):
 
     elif phase_env == 5:
         list_action = np.where(player_token[:3] > 0)[0]+62
+        # if len(list_action) == 0:
+        #     list_action = np.array([65])
         return list_action
     
 @njit(fastmath=True, cache=True)
@@ -302,19 +306,19 @@ def step(env_state, action, card_in4, card_point_in4):
             free_score = 0
             if idx_card_buy < 2:
                 if idx_card_buy == 0:
-                    if list_coin[0] != 0:
-                        free_score == 3
-                        env_state[-5] -= 1
+                    if list_coin[-1] != 0:
+                        free_score = 3
+                        env_state[-4] -= 1
                     else:
-                        if list_coin[1] != 0:
+                        if list_coin[0] != 0:
                             free_score = 1
-                            env_state[-4] -= 1
+                            env_state[-5] -= 1
                 else:
                     if list_coin[1] != 0 and list_coin[0] != 0:
                         free_score = 1
-                        env_state[-4] -= 1
+                        env_state[-5] -= 1
             #Cập nhật giá trị
-            player_in4[0] += free_score + card_point_in4[card_buy][-1]
+            player_in4[0] += (free_score + card_point_in4[card_buy][-1])
             player_in4[1] += 1
             player_in4[2:6] -= token_fee
             list_card_point_board[idx_card_buy:] = np.append(list_card_point_board[idx_card_buy+1:], -1)
@@ -322,8 +326,9 @@ def step(env_state, action, card_in4, card_point_in4):
             for i in range(5):
                 id = list_card_point_board[:5][i]
                 top_5_card_point[i] = card_point_in4[int(id)]
-
             top_5_card_point = top_5_card_point.flatten()
+
+
             env_state[51*id_action:51*(id_action+1)] = player_in4
             env_state[391:427] = list_card_point_board
             env_state[323:348] = top_5_card_point
@@ -446,6 +451,7 @@ def step(env_state, action, card_in4, card_point_in4):
 
     elif phase_env == 4:
         #lấy thông tin
+        # stay_drop = env_state[-6]
         token_drop = action - 57 
         #Cập nhật thông tin
         player_in4[2:6][token_drop] -= 1
@@ -456,7 +462,13 @@ def step(env_state, action, card_in4, card_point_in4):
             env_state[-1] = (env_state[-1] + 1)%5
 
     elif phase_env == 5:
+        number_use = env_state[-8]
         id_update = action - 62
+        # if id_update == 3:
+        #     env_state[-8] = 0
+        #     env_state[-2] = 1
+        #     env_state[-1] = (env_state[-1] + 1)%5
+        # else:
         player_in4[2:6][id_update] -= 1
         player_in4[2:6][id_update+1] += 1
         env_state[51*id_action:51*(id_action+1)] = player_in4
@@ -468,17 +480,28 @@ def step(env_state, action, card_in4, card_point_in4):
     return env_state
 
 def one_game(list_player, file_temp, file_per, card_in4, card_point_in4):
+    global all_action_mean
     env_state = reset(card_in4, card_point_in4)
     count_turn = 0
     while system_check_end(env_state) and count_turn < 5000:
-        action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)        
+        action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)     
+        # print(f'Turn: {count_turn} player {int(env_state[-1])} action {action} {all_action_mean[action]}  có {np.sum(env_state[51*int(env_state[-1]):51*int(env_state[-1]+1)][2:6])} nguyên liệu và {env_state[51*int(env_state[-1]):51*int(env_state[-1]+1)][:2]} điểm')     #có {env_state[51*int(env_state[-1]):51*int(env_state[-1]+1)]}
         env_state = step(env_state, action, card_in4, card_point_in4)
         count_turn += 1
 
     winner = check_winner(env_state)
     for id_player in range(5):
+        id_action = env_state[-1]
         action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)
+        # print(f'LOOP last game: Turn: {count_turn} player {int(env_state[-1])} action {action}  {all_action_mean[action]} có {env_state[51*int(env_state[-1]):51*int(env_state[-1]+1)]}')
         env_state[-1] = (env_state[-1] + 1)%5
+    
+    if file_per[2] > 1:
+        print(file_per)
+        print(env_state)
+        file_per[2] = 0
+    else:
+        file_per[2] = 0
     return winner, file_per
 
 def normal_main(list_player, times, print_mode):
