@@ -144,7 +144,7 @@ def get_list_action(player_state):
     
     elif phase_env == 4:
         #trả token dư thừa (4 action) sau khi đánh thẻ hoặc mua thẻ top
-        list_action = np.where(player_token > 1)[0]+57
+        list_action = np.where(player_token > 0)[0]+57
         return list_action
 
     elif phase_env == 5:
