@@ -29,14 +29,11 @@ def state_to_player(env_state):
     return player_state
 
 @njit(fastmath=True, cache=True)
-def amount_action_space():
+def amount_action():
     return 54
 
 def player_random(player_state, file_temp, file_per):
     list_action = get_list_action(player_state)
-    # if len(list_action) == 0:
-    #     print(list_action, player_state)
-    #     raise Exception('toang đây Hiếu ơi')
     action = int(np.random.choice(list_action))
     if check_victory(player_state) == -1:
         # print('chưa hết game')
@@ -48,14 +45,13 @@ def player_random(player_state, file_temp, file_per):
         else:
             # print('lose')
             pass
+    # print(list_action)
     return action, file_temp, file_per
 
-# @njit(fastmath=True, cache=True)
 def action_player(env_state,list_player,file_temp,file_per):
     current_player = int(env_state[-2])
     player_state = state_to_player(env_state)
     played_move,file_temp[current_player],file_per = list_player[current_player](player_state,file_temp[current_player],file_per)
-    # print(current_player, played_move, env_state[-6:])
     return played_move,file_temp,file_per
 
 @njit(fastmath=True, cache=True)
@@ -111,7 +107,10 @@ def get_list_action(player_state):
     
     elif phase_env == 3:
         #3, 4, 5 lần lượt là lấy tiền của người ở vị trí 1,2,3 sau mình
-        return np.array([3, 4, 5])
+        all_player_coin = np.array([player_state[20], player_state[40], player_state[60]])
+        id_can_stole = np.where(all_player_coin > 0)[0]
+        list_action = id_can_stole + 3 
+        return list_action
 
     elif phase_env == 4:
         #6, 7, 8 lần lượt là chọn đổi thẻ với người ở vị trí 1,2,3 sau mình, 9 là ko đổi với ai
@@ -142,54 +141,54 @@ def get_list_action(player_state):
         if p_coin > 0 :
             if card_board[2] > 0 and card_bought[2] == 0:
                 list_action = np.append(list_action, 36)
-        if p_coin > 2 :
+        if p_coin > 1 :
             if card_board[3] > 0 and card_bought[3] == 0:
                 list_action = np.append(list_action, 37)
-        if p_coin > 2 :
+        if p_coin > 1 :
             if card_board[4] > 0 and card_bought[4] == 0:
                 list_action = np.append(list_action, 38)
-        if p_coin > 3 :
+        if p_coin > 2 :
             if card_board[5] > 0 and card_bought[5] == 0:
                 list_action = np.append(list_action, 39)
-        if p_coin > 5 :
+        if p_coin > 4 :
             if card_board[6] > 0 and card_bought[6] == 0:
                 list_action = np.append(list_action, 40)
-        if p_coin > 3 :
+        if p_coin > 2 :
             if card_board[7] > 0 and card_bought[7] == 0:
                 list_action = np.append(list_action, 41)
-        if p_coin > 6 :
+        if p_coin > 5 :
             if card_board[8] > 0 and card_bought[8] == 0:
                 list_action = np.append(list_action, 42)
-        if p_coin > 3 :
+        if p_coin > 2 :
             if card_board[9] > 0 and card_bought[9] == 0:
                 list_action = np.append(list_action, 43)
-        if p_coin > 3 :
+        if p_coin > 2 :
             if card_board[10] > 0 and card_bought[10] == 0:
                 list_action = np.append(list_action, 44)
-        if p_coin > 2 :
+        if p_coin > 1 :
             if card_board[11] > 0 and card_bought[11] == 0:
                 list_action = np.append(list_action, 45)
 
-        if p_coin > 6 :
+        if p_coin > 5 :
             if player_state_own[13] == 0:
                 list_action = np.append(list_action, 46)
-        if p_coin > 7 :
+        if p_coin > 6 :
             if player_state_own[14] == 0:
                 list_action = np.append(list_action, 47)
-        if p_coin > 8 :
+        if p_coin > 7 :
             if player_state_own[15] == 0:
                 list_action = np.append(list_action, 48)
 
-        if p_coin > 4:
+        if p_coin > 3:
             if player_state_own[-1] == 0:
                 list_action = np.append(list_action, 52)
-        if p_coin > 10:
+        if p_coin > 9:
             if player_state_own[-2] == 0:
                 list_action = np.append(list_action, 51)
-        if p_coin > 16:
+        if p_coin > 15:
             if player_state_own[-3] == 0:
                 list_action = np.append(list_action, 50)
-        if p_coin > 22:
+        if p_coin > 21:
             if player_state_own[-4] == 0:
                 list_action = np.append(list_action, 49)
         return list_action
@@ -266,8 +265,13 @@ def step(env_state, action, all_card_fee):
                         env_state[20*id_next] -= delta_coin
                         player_in4[0] += delta_coin
                     env_state[20*id_action:20*(id_action+1)] = player_in4
-                
-                if player_in4[14] > 0:      #nếu có thẻ đài truyền hình
+
+                all_other_player_coin = np.zeros(3)
+                for next in range(1, 4):
+                    all_other_player_coin[next-1] = env_state[20*((id_action+next)%4)]
+
+
+                if player_in4[14] > 0 and np.sum(all_other_player_coin) > 0:      #nếu có thẻ đài truyền hình
                     env_state[20*id_action:20*(id_action+1)] = player_in4
                     env_state[-1] = 3           #trạng thái chọn người để lấy tiền
                     return env_state
@@ -300,11 +304,10 @@ def step(env_state, action, all_card_fee):
                 env_state[20 * id_action] = player_in4[0]   #cập nhật tiền của người chơi
 
             elif dice == 10:
-                for id in range(4):
-                    env_state[20*id] += env_state[20*id+11]*3
+                
                 next = 1
                 while 0 < player_in4[0] and next <= 3:
-                    id_next = (id_action + next) % 4
+                    id_next = (id_action - next) % 4
                     player_id = env_state[20 * id_next : 20 * (id_next + 1)]
                     coin_get = player_id[10] * (2 + int(player_id[-2] > 0))
                     delta_coin = min(coin_get, player_in4[0])
@@ -312,6 +315,8 @@ def step(env_state, action, all_card_fee):
                     player_in4[0] -= delta_coin
                     env_state[20*id_next] = player_id[0]
                     next += 1
+                for id in range(4):
+                    env_state[20*id] += env_state[20*id+11]*3
                 env_state[20 * id_action] = player_in4[0]   #cập nhật tiền của người chơi
 
             elif dice == 11 or dice == 12:
@@ -323,8 +328,7 @@ def step(env_state, action, all_card_fee):
             else:
                 if env_state[-1] == 1:
                     env_state[-1] = 7
-                
-                
+                           
     elif phase_env == 2:
         dice = 0
         dice1 = 0
@@ -370,9 +374,7 @@ def step(env_state, action, all_card_fee):
                 player_in4[0] -= delta_coin
                 env_state[20*id_next] = player_id[0]
                 next += 1
-
             player_in4[0] += player_in4[3] * (1 + int(player_in4[-2] > 0))          #cộng tiền từ tiệm bánh
-
             env_state[20 * id_action] = player_in4[0]   #cập nhật tiền của người chơi
 
         elif dice == 4:
@@ -394,7 +396,11 @@ def step(env_state, action, all_card_fee):
                     player_in4[0] += delta_coin
                 env_state[20*id_action:20*(id_action+1)] = player_in4
             
-            if player_in4[14] > 0:      #nếu có thẻ đài truyền hình
+            all_other_player_coin = np.zeros(3)
+            for next in range(1, 4):
+                all_other_player_coin[next-1] = env_state[20*((id_action+next)%4)]
+
+            if player_in4[14] > 0 and np.sum(all_other_player_coin) > 0:      #nếu có thẻ đài truyền hình
                 env_state[20*id_action:20*(id_action+1)] = player_in4
                 env_state[-1] = 3           #trạng thái chọn người để lấy tiền
                 return env_state
@@ -418,7 +424,7 @@ def step(env_state, action, all_card_fee):
             env_state[20*id_action] += env_state[20*id_action + 8]*(env_state[20*id_action+6] + env_state[20*id_action+9])*3
 
         elif dice == 9:
-            
+            next = 1
             while 0 < player_in4[0] and next <= 3:
                 id_next = (id_action - next) % 4
                 player_id = env_state[20 * id_next : 20 * (id_next + 1)]
@@ -430,15 +436,12 @@ def step(env_state, action, all_card_fee):
                 next += 1
             for id in range(4):
                 env_state[20*id] += env_state[20*id+9]*5
-            next = 1
             env_state[20 * id_action] = player_in4[0]   #cập nhật tiền của người chơi
 
         elif dice == 10:
-            for id in range(4):
-                env_state[20*id] += env_state[20*id+11]*3
             next = 1
             while 0 < player_in4[0] and next <= 3:
-                id_next = (id_action + next) % 4
+                id_next = (id_action - next) % 4
                 player_id = env_state[20 * id_next : 20 * (id_next + 1)]
                 coin_get = player_id[10] * (2 + int(player_id[-2] > 0))
                 delta_coin = min(coin_get, player_in4[0])
@@ -446,6 +449,8 @@ def step(env_state, action, all_card_fee):
                 player_in4[0] -= delta_coin
                 env_state[20*id_next] = player_id[0]
                 next += 1
+            for id in range(4):
+                env_state[20*id] += env_state[20*id+11]*3
             env_state[20 * id_action] = player_in4[0]   #cập nhật tiền của người chơi
 
         elif dice == 11 or dice == 12:
@@ -540,14 +545,13 @@ def system_check_end(env_state):
     return True
 
 def one_game(list_player, file_temp, file_per, all_card_fee):
+    # global all_action_mean
     env_state = reset()
     count_turn = 0
     while system_check_end(env_state) and count_turn < 500:
-        # player_state = state_to_player(env_state)
         action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)
         env_state = step(env_state, action, all_card_fee)
         count_turn += 1
-        # all_state.append(env_state)
 
     winner = check_winner(env_state)
     for id_player in range(4):
@@ -561,26 +565,20 @@ def normal_main(list_player, times, print_mode):
     count = np.zeros(len(list_player))
     file_per = [0]
     all_card_fee = np.array([1, 1, 1, 2, 2, 3, 5, 3, 6, 3, 3, 2, 6, 7, 8, 22, 16, 10, 4])
-    # count_game = np.zeros(10)
     all_id_player = np.arange(len(list_player))
     for van in range(times):
-        # print('ván ', van, '--------------------------------------------------------------------------------------------------------')
         shuffle = np.random.choice(all_id_player, 4, replace=False)
-        # for id in shuffle:
-        #     count_game[id] += 1
         shuffle_player = [list_player[shuffle[0]], list_player[shuffle[1]], list_player[shuffle[2]], list_player[shuffle[3]]]
         file_temp = [[0],[0],[0],[0]]
-        # try:
         winner, file_per = one_game(shuffle_player, file_temp, file_per, all_card_fee)
         count[shuffle[winner]] += 1
-        # print(winner)
     return count, file_per
 
 def random_policy(state,file_temp,file_per):
     list_action = get_list_action(state)
     action = np.random.choice(list_action)
     if len(file_temp) < 2:
-        file_temp = np.random.randint(amount_action_space(),size = (len(state),amount_action_space()))
+        file_temp = np.random.randint(amount_action(),size = (len(state),amount_action()))
     model = np.matmul(state,file_temp)
     max = 0
     for act in list_action:
@@ -600,8 +598,3 @@ def random_policy(state,file_temp,file_per):
 
 # count_all, file_per_all = normal_main(list_player, 1, 1)
 # count_all, file_per_all
-
-
-
-
-
