@@ -42,6 +42,8 @@ def reset():
     temp_drop = np.zeros(15)
     environment = np.concatenate((environment, down_card, left_up, right_up, temp_drop))
     environment = np.append(environment, np.array([-0.5, 0, 1, 1, 1]))
+    #last_checked, number_checked,  id_action, round , phase
+
     return environment
 
 @njit(fastmath=True, cache=True)
@@ -566,6 +568,7 @@ def one_game(list_player, file_temp, file_per, all_penalty):
         env_state = step(env_state, action, all_penalty)
     winner = check_winner(env_state)
     for id_player in range(4):
+        env_state[-1] = 1
         id_action = env_state[-3]
         player_state = state_to_player(env_state)
         action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)
