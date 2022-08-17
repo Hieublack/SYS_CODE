@@ -77,6 +77,7 @@ def check_winner(env_state):
         player_in4 = env_state[20*id_player:20*(id_player+1)]
         if np.sum(player_in4[-4:]) == 4:
             return id_player
+    return winner
     
 @njit(fastmath=True, cache=True)
 def get_list_action(player_state):
@@ -552,9 +553,10 @@ def one_game(list_player, file_temp, file_per, all_card_fee):
         action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)
         env_state = step(env_state, action, all_card_fee)
         count_turn += 1
-
+    print(count_turn)
     winner = check_winner(env_state)
     for id_player in range(4):
+        env_state[-1] = 1
         id_action = env_state[-2]
         player_state = state_to_player(env_state)
         action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)
@@ -562,7 +564,7 @@ def one_game(list_player, file_temp, file_per, all_card_fee):
     return winner, file_per
 
 def normal_main(list_player, times, print_mode):
-    count = np.zeros(len(list_player))
+    count = np.zeros(len(list_player)+1)
     file_per = [0]
     all_card_fee = np.array([1, 1, 1, 2, 2, 3, 5, 3, 6, 3, 3, 2, 6, 7, 8, 22, 16, 10, 4])
     all_id_player = np.arange(len(list_player))
@@ -571,7 +573,10 @@ def normal_main(list_player, times, print_mode):
         shuffle_player = [list_player[shuffle[0]], list_player[shuffle[1]], list_player[shuffle[2]], list_player[shuffle[3]]]
         file_temp = [[0],[0],[0],[0]]
         winner, file_per = one_game(shuffle_player, file_temp, file_per, all_card_fee)
-        count[shuffle[winner]] += 1
+        if winner == -1:
+            count[winner] += 1
+        else:
+            count[shuffle[winner]] += 1
     return count, file_per
 
 def random_policy(state,file_temp,file_per):
