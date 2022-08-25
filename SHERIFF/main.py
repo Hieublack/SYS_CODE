@@ -433,8 +433,12 @@ def step(env_state, action, all_penalty):
     return env_state
 
 @njit(fastmath=True, cache=True)
-def amount_action_space():
+def amount_action():
     return 83
+
+@njit(fastmath=True, cache=True)
+def amount_player():
+    return 4
 
 @njit(fastmath=True, cache=True)  
 def system_check_end(env_state):
@@ -475,7 +479,7 @@ def check_winner(env_state):
         top1 = np.max(count_type)
         if top1 == 0:
             continue
-        count_top1 = len(np.where(count_type == top1))
+        count_top1 = len(np.where(count_type == top1)[0])
         if count_top1 > 1:
             reward_i = np.floor((reward_King[type_i] + reward_Queen[type_i])/count_top1)
             all_player_coin = np.where(count_type == top1, all_player_coin + reward_i, all_player_coin)
@@ -487,7 +491,7 @@ def check_winner(env_state):
             top2 = np.max(count_type)
             if top2 == 0:
                 continue
-            count_top2 = len(np.where(count_type == top2))
+            count_top2 = len(np.where(count_type == top2)[0])
             if count_top2 > 1:
                 reward_i = np.floor(reward_Queen[type_i]/count_top2)
                 all_player_coin = np.where(count_type == top2, all_player_coin + reward_i, all_player_coin)
@@ -500,25 +504,25 @@ def check_winner(env_state):
 
     all_player_coin_int = np.array([int(all_player_coin[i]) for i in range(len(all_player_coin))])
     temp_win = np.max(all_player_coin_int)
-    number_win = np.where(all_player_coin_int == temp_win)
-    if len(number_win[0]) == 1:
-        return number_win[0][0]
+    number_win = np.where(all_player_coin_int == temp_win)[0]
+    if len(number_win) == 1:
+        return number_win[0]
     else:
         all_legal = np.zeros(4)
-        for id in number_win[0]:
+        for id in number_win:
             all_legal[id] = np.sum(all_done_card[15*id:15*(id+1)][:4])
         temp_win = np.max(all_legal)
-        number_win = np.where(all_legal == temp_win)
-        if len(number_win[0]) == 1:
-            return number_win[0][0]
+        number_win = np.where(all_legal == temp_win)[0]
+        if len(number_win) == 1:
+            return number_win[0]
         else:
             all_unlegal = np.zeros(4)
-            for id in number_win[0]:
+            for id in number_win:
                 all_unlegal[id] = np.sum(all_done_card[15*id:15*(id+1)][4:])
             temp_win = np.max(all_unlegal)
-            number_win = np.where(all_unlegal == temp_win)
-            if len(number_win[0]) == 1:
-                return number_win[0][0]
+            number_win = np.where(all_unlegal == temp_win)[0]
+            if len(number_win) == 1:
+                return number_win[0]
             else:
                 all_player_coin_last = np.zeros(4)
                 all_player_coin_last[number_win] = all_player_coin[number_win]
@@ -881,12 +885,14 @@ def one_game(list_player, file_temp, file_per, all_penalty):
         # player_state = state_to_player(env_state)
         action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)
         env_state = step(env_state, action, all_penalty)
+    
     winner = check_winner(env_state)
     for id_player in range(4):
         env_state[-1] = 1
         id_action = env_state[-3]
         action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)
         env_state[-3] = (env_state[-3] + 1)%4
+
     return winner, file_per
 
 def normal_main(list_player, times, file_per):
@@ -901,6 +907,7 @@ def normal_main(list_player, times, file_per):
         winner, file_per = one_game(shuffle_player, file_temp, file_per, all_penalty)
         count[shuffle[winner]] += 1
     return count, file_per
+
 
 all_action_mean = list(pd.read_excel('SHERIFF.xlsx')['Mean'])
 # list_player = [player_random]*4

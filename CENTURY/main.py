@@ -60,6 +60,10 @@ def state_to_player(env_state):
 def amount_action():
     return 65
 
+@njit(fastmath=True, cache=True)
+def amount_player():
+    return 5
+
 def player_random(player_state, file_temp, file_per):
 
     list_action = get_list_action(player_state)
