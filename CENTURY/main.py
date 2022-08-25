@@ -528,7 +528,7 @@ def system_check_end(env_state):
 def one_game_print_mode(list_player, file_temp, file_per, card_in4, card_point_in4):
     env_state = reset(card_in4, card_point_in4)
     count_turn = 0
-    while system_check_end(env_state) and count_turn < 1000:
+    while system_check_end(env_state) and count_turn < 2000:
         action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)    
         print(f'Turn: {count_turn} player {int(env_state[-1])} action {action} {all_action_mean[action]}  có {np.sum(env_state[51*int(env_state[-1]):51*int(env_state[-1]+1)][2:6])} nguyên liệu và {env_state[51*int(env_state[-1]):51*int(env_state[-1]+1)][:2]} điểm')     #có {env_state[51*int(env_state[-1]):51*int(env_state[-1]+1)]}
         env_state = step(env_state, action, card_in4, card_point_in4)
@@ -788,7 +788,7 @@ def step(env_state, action, card_in4, card_point_in4):
 def one_game(list_player, file_temp, file_per, card_in4, card_point_in4):
     env_state = reset(card_in4, card_point_in4)
     count_turn = 0
-    while system_check_end(env_state) and count_turn < 1000:
+    while system_check_end(env_state) and count_turn < 2000:
         action, file_temp, file_per = action_player(env_state,list_player,file_temp,file_per)     
         env_state = step(env_state, action, card_in4, card_point_in4)
         count_turn += 1
